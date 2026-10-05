@@ -62,3 +62,24 @@ func TestDownloadLimitDoesNotRetry(t *testing.T) {
 		}
 	}
 }
+
+func TestDownloadExposesOnlyConfirmedQuotaNotice(t *testing.T) {
+	const notice = "There are more than 5 downloads from your IP 192.0.2.1 during last 24 hours. Please sign in to your account or complete a simple registration to download more books"
+	for _, lang := range []string{"en_US.UTF-8", "zh_TW.UTF-8"} {
+		t.Setenv("LANG", lang)
+		for _, confirmed := range []bool{true, false} {
+			heading := "Downloading"
+			if confirmed {
+				heading = "Daily limit reached"
+			}
+			page := "<html><h1>" + heading + "</h1><p>" + notice + "</p><footer>Unrelated page content</footer></html>"
+			err := downloadResponseError(strings.NewReader(page))
+			if confirmed && err.Error() != notice {
+				t.Fatalf("changed notice: %q", err)
+			}
+			if !confirmed && err.Error() != message("download") {
+				t.Fatalf("exposed unconfirmed notice: %q", err)
+			}
+		}
+	}
+}

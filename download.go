@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -126,7 +127,28 @@ func downloadResponseError(body io.Reader) error {
 		}
 	})
 	if limited {
+		// Only expose the quota notice, never the rest of the page.
+		notice := ""
+		walk(doc, func(n *html.Node) {
+			if n.Type != html.ElementNode {
+				return
+			}
+			text := nodeText(n)
+			if quotaNotice.MatchString(text) && (notice == "" || len(text) < len(notice)) {
+				notice = text
+			}
+		})
+		if notice != "" {
+			return downloadLimitError{notice}
+		}
 		return fail("downloadLimit")
 	}
 	return fail("download")
 }
+
+var quotaNotice = regexp.MustCompile(`(?i)^There are more than [0-9]+ downloads from your IP .+? during last [0-9]+ hours\.`)
+
+type downloadLimitError struct{ notice string }
+
+func (e downloadLimitError) Error() string { return e.notice }
+func (e downloadLimitError) Unwrap() error { return fail("downloadLimit") }
