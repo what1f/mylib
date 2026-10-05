@@ -59,8 +59,7 @@ jobs:
           cd dist
           sha256sum -c checksums.txt
           cd ..
-          printf 'Source: https://github.com/what1f/mylib/tree/%s\n' "$TAG" > release-notes.md
           gh release create "$TAG" dist/*.tar.gz dist/*.zip dist/checksums.txt \
             --repo what1f/mylib-releases --target main --draft \
-            --title "mylib $TAG" --notes-file release-notes.md
+            --title "mylib $TAG" --notes ''
           gh release edit "$TAG" --repo what1f/mylib-releases --draft=false --latest
