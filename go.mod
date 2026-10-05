@@ -1,4 +1,4 @@
-module mylib
+module github.com/what1f/mylib
 
 go 1.24.0
 
