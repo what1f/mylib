@@ -1,6 +1,6 @@
 # mylib
 
-Search Z-Library and download books from your terminal.
+Search and download books from your terminal.
 
 ## Install
 
