@@ -62,9 +62,13 @@ func (l *library) search(ctx context.Context, q string, full bool, page, limit i
 	var result struct {
 		Success int `json:"success"`
 		Books   []struct {
-			ID                                     int64 `json:"id"`
-			Title, Publisher, Author, Language, DL string
-			Year                                   int `json:"year"`
+			ID        int64  `json:"id"`
+			Title     string `json:"title"`
+			Publisher string `json:"publisher"`
+			Author    string `json:"author"`
+			Language  string `json:"language"`
+			DL        string `json:"dl"`
+			Year      int    `json:"year"`
 		} `json:"books"`
 	}
 	if json.Unmarshal(b, &result) != nil {

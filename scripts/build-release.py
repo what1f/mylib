@@ -2,6 +2,7 @@
 """Build the six release archives and SHA-256 manifest."""
 import hashlib
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -13,6 +14,11 @@ root = Path(__file__).resolve().parent.parent
 output = Path(sys.argv[1] if len(sys.argv) > 1 else root / 'dist').resolve()
 output.mkdir(parents=True, exist_ok=True)
 archives = []
+# Reject an unconfigured toolchain rather than silently producing plain binaries.
+version = subprocess.check_output(['garble', 'version'], text=True)
+if 'v0.17.0' not in version:
+    raise SystemExit('Install garble v0.17.0 before building releases.')
+endpoints = re.findall(r'"https://([^"/]+)"', (root / 'library.go').read_text())
 with tempfile.TemporaryDirectory(prefix='mylib-build-') as temporary:
     for platform in ('darwin', 'linux', 'windows'):
         for architecture in ('arm64', 'amd64'):
@@ -22,9 +28,12 @@ with tempfile.TemporaryDirectory(prefix='mylib-build-') as temporary:
                 'GOOS': platform, 'GOARCH': architecture, 'CGO_ENABLED': '0'
             }
             subprocess.run(
-                ['go', 'build', '-trimpath', '-ldflags=-s -w', '-o', str(binary), '.'],
+                ['garble', '-literals', 'build', '-trimpath', '-ldflags=-s -w', '-o', str(binary), '.'],
                 cwd=root, env=environment, check=True,
             )
+            data = binary.read_bytes()
+            if any(host.encode() in data for host in endpoints):
+                raise SystemExit('A release binary contains an unprotected endpoint.')
             binary.chmod(0o755)
             extension = 'zip' if platform == 'windows' else 'tar.gz'
             archive = output / f'mylib_{platform}_{architecture}.{extension}'

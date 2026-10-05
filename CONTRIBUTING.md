@@ -1,9 +1,13 @@
 # Development
 
+Release builds use Go 1.26.8 and garble v0.17.0.
+
 ```sh
 go test -race ./...
 go vet ./...
 go build -o bin/mylib .
+go install mvdan.cc/garble@v0.17.0
+garble -literals test ./...
 python3 scripts/build-release.py
 ```
 
